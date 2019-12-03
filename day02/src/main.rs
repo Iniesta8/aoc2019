@@ -24,12 +24,7 @@ const INPUT: [usize; 145] = [
     127, 131, 1, 131, 2, 135, 1, 135, 6, 0, 99, 2, 0, 14, 0,
 ];
 
-fn solve_p1() -> usize {
-    let mut input = INPUT;
-
-    input[1] = 12;
-    input[2] = 2;
-
+fn run_until_halt(input: &mut [usize]) {
     let mut ip = 0;
 
     loop {
@@ -46,6 +41,15 @@ fn solve_p1() -> usize {
 
         ip += 4;
     }
+}
+
+fn solve_p1() -> usize {
+    let mut input = INPUT;
+
+    input[1] = 12;
+    input[2] = 2;
+
+    run_until_halt(&mut input);
 
     input[0]
 }
@@ -56,21 +60,7 @@ fn solve_p2() -> usize {
             let mut input = INPUT;
             input[1] = noun;
             input[2] = verb;
-            let mut ip = 0;
-            loop {
-                let oc: Opcode = Opcode::from_usize(input[ip]);
-                let op1_pos = input[ip + 1];
-                let op2_pos = input[ip + 2];
-                let out_pos = input[ip + 3];
-
-                match oc {
-                    Opcode::ADD => input[out_pos] = input[op1_pos] + input[op2_pos],
-                    Opcode::MUL => input[out_pos] = input[op1_pos] * input[op2_pos],
-                    Opcode::HALT => break,
-                };
-
-                ip += 4;
-            }
+            run_until_halt(&mut input);
             if input[0] == 19690720 {
                 return 100 * noun + verb;
             }

@@ -1,0 +1,14 @@
+[package]
+name = "day04"
+version = "0.1.0"
+authors = ["Andreas Schnebinger <andi.schnebinger@googlemail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# The development profile, used for `cargo build`
+[profile.dev]
+opt-level = 0  # Controls the --opt-level the compiler builds with
+debug = true   # Controls whether the compiler passes `-g`
+
+[dependencies]

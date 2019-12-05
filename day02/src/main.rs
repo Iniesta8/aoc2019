@@ -61,7 +61,7 @@ fn solve_p2() -> usize {
             input[1] = noun;
             input[2] = verb;
             run_until_halt(&mut input);
-            if input[0] == 19690720 {
+            if input[0] == 19_690_720 {
                 return 100 * noun + verb;
             }
         }

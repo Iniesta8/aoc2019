@@ -5,7 +5,7 @@ fn calc_distance(pos1: (i32, i32), pos2: (i32, i32)) -> u32 {
     ((pos1.0 - pos2.0).abs() + (pos1.1 - pos2.1).abs()) as u32
 }
 
-fn get_route(route: &mut HashMap<(i32, i32), u32>, route_raw: &Vec<&str>) {
+fn get_route(route: &mut HashMap<(i32, i32), u32>, route_raw: &[&str]) {
     let mut cur_pos = (0, 0);
     let mut total_dist = 0;
     for dir in route_raw {
@@ -56,8 +56,8 @@ fn main() -> io::Result<()> {
     io::stdin().read_line(&mut wire1_input)?;
     io::stdin().read_line(&mut wire2_input)?;
 
-    let wire1: Vec<&str> = wire1_input.trim().split(",").collect();
-    let wire2: Vec<&str> = wire2_input.trim().split(",").collect();
+    let wire1: Vec<&str> = wire1_input.trim().split(',').collect();
+    let wire2: Vec<&str> = wire2_input.trim().split(',').collect();
 
     let mut wire1_map: HashMap<(i32, i32), u32> = HashMap::new();
     get_route(&mut wire1_map, &wire1);

@@ -2,46 +2,75 @@ use std::iter::from_fn;
 
 fn digits_inc_or_same(num: u32) -> bool {
     let mut it = rev_digit_iter(num);
-    let mut lastc = it.next().unwrap();
+    let mut lastd = it.next().unwrap();
     for d in it {
-        if lastc < d {
+        if lastd < d {
             return false;
         }
-        lastc = d;
+        lastd = d;
     }
     true
 }
 
 fn adjacent_digits_same(num: u32) -> bool {
     let mut it = rev_digit_iter(num);
-    let mut lastc = it.next().unwrap();
+    let mut lastd = it.next().unwrap();
     for d in it {
-        if lastc == d {
+        if lastd == d {
             return true;
         }
-        lastc = d;
+        lastd = d;
     }
+    false
+}
+
+fn adjacent_digits_same_advanced(num: u32) -> bool {
+    let mut count = 1;
+
+    let mut it = rev_digit_iter(num);
+    let mut lastd = it.next().unwrap();
+    for d in it {
+        if lastd == d {
+            count += 1;
+        } else {
+            if count == 2 {
+                return true;
+            }
+            count = 1;
+        }
+        lastd = d;
+    }
+
+    if count == 2 {
+        return true;
+    }
+
     false
 }
 
 fn rev_digit_iter(mut num: u32) -> impl Iterator<Item = u32> {
     from_fn(move || {
         if num == 0 {
-            return None;
+            None
         } else {
-            let n = num % 10;
+            let d = num % 10;
             num /= 10;
-            return Some(n);
+            Some(d)
         }
     })
 }
 
 fn main() {
-    let p1 = (138241..=674034)
-        .filter(|&x| adjacent_digits_same(x) && digits_inc_or_same(x))
+    let p1 = (138_241..=674_034)
+        .filter(|&x| digits_inc_or_same(x) && adjacent_digits_same(x))
+        .count();
+
+    let p2 = (138_241..=674_034)
+        .filter(|&x| digits_inc_or_same(x) && adjacent_digits_same_advanced(x))
         .count();
 
     println!("p1: {}", p1);
+    println!("p2: {}", p2);
 }
 
 #[cfg(test)]
@@ -58,5 +87,15 @@ mod tests {
     fn test_two_adjacent_digits_same() {
         assert_eq!(adjacent_digits_same(122345), true);
         assert_eq!(adjacent_digits_same(111111), true);
+    }
+
+    #[test]
+    fn test_adjacent_digits_same_advanced() {
+        assert_eq!(adjacent_digits_same_advanced(122345), true);
+        assert_eq!(adjacent_digits_same_advanced(111122), true);
+        assert_eq!(adjacent_digits_same_advanced(123444), false);
+        assert_eq!(adjacent_digits_same_advanced(112233), true);
+        assert_eq!(adjacent_digits_same_advanced(111111), false);
+        assert_eq!(adjacent_digits_same_advanced(112222), true);
     }
 }

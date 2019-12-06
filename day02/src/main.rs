@@ -1,67 +1,63 @@
+use std::io;
+
+#[derive(PartialEq)]
 enum Opcode {
-    ADD = 1,
-    MUL = 2,
-    HALT = 99,
+    Add = 1,
+    Mul = 2,
+    Halt = 99,
 }
 
 impl Opcode {
-    fn from_usize(value: usize) -> Opcode {
+    fn from_usize(value: usize) -> Self {
         match value {
-            1 => Opcode::ADD,
-            2 => Opcode::MUL,
-            99 => Opcode::HALT,
+            1 => Opcode::Add,
+            2 => Opcode::Mul,
+            99 => Opcode::Halt,
             _ => panic!("Unknown opcode"),
         }
     }
 }
-
-const INPUT: [usize; 145] = [
-    1, 0, 0, 3, 1, 1, 2, 3, 1, 3, 4, 3, 1, 5, 0, 3, 2, 10, 1, 19, 1, 19, 9, 23, 1, 23, 6, 27, 1, 9,
-    27, 31, 1, 31, 10, 35, 2, 13, 35, 39, 1, 39, 10, 43, 1, 43, 9, 47, 1, 47, 13, 51, 1, 51, 13,
-    55, 2, 55, 6, 59, 1, 59, 5, 63, 2, 10, 63, 67, 1, 67, 9, 71, 1, 71, 13, 75, 1, 6, 75, 79, 1,
-    10, 79, 83, 2, 9, 83, 87, 1, 87, 5, 91, 2, 91, 9, 95, 1, 6, 95, 99, 1, 99, 5, 103, 2, 103, 10,
-    107, 1, 107, 6, 111, 2, 9, 111, 115, 2, 9, 115, 119, 2, 13, 119, 123, 1, 123, 9, 127, 1, 5,
-    127, 131, 1, 131, 2, 135, 1, 135, 6, 0, 99, 2, 0, 14, 0,
-];
 
 fn run_until_halt(input: &mut [usize]) {
     let mut ip = 0;
 
     loop {
         let oc: Opcode = Opcode::from_usize(input[ip]);
+        if oc == Opcode::Halt {
+            break;
+        }
         let op1_pos = input[ip + 1];
         let op2_pos = input[ip + 2];
         let out_pos = input[ip + 3];
 
         match oc {
-            Opcode::ADD => input[out_pos] = input[op1_pos] + input[op2_pos],
-            Opcode::MUL => input[out_pos] = input[op1_pos] * input[op2_pos],
-            Opcode::HALT => break,
+            Opcode::Add => input[out_pos] = input[op1_pos] + input[op2_pos],
+            Opcode::Mul => input[out_pos] = input[op1_pos] * input[op2_pos],
+            Opcode::Halt => break,
         };
 
         ip += 4;
     }
 }
 
-fn solve_p1() -> usize {
-    let mut input = INPUT;
+fn solve_p1(input: Vec<usize>) -> usize {
+    let mut memory = input;
+    memory[1] = 12;
+    memory[2] = 2;
 
-    input[1] = 12;
-    input[2] = 2;
+    run_until_halt(&mut memory);
 
-    run_until_halt(&mut input);
-
-    input[0]
+    memory[0]
 }
 
-fn solve_p2() -> usize {
+fn solve_p2(input: Vec<usize>) -> usize {
     for noun in 0..=99 {
         for verb in 0..=99 {
-            let mut input = INPUT;
-            input[1] = noun;
-            input[2] = verb;
-            run_until_halt(&mut input);
-            if input[0] == 19_690_720 {
+            let mut memory = input.clone();
+            memory[1] = noun;
+            memory[2] = verb;
+            run_until_halt(&mut memory);
+            if memory[0] == 19_690_720 {
                 return 100 * noun + verb;
             }
         }
@@ -69,7 +65,42 @@ fn solve_p2() -> usize {
     0
 }
 
-fn main() {
-    println!("p1: {}", solve_p1());
-    println!("p2: {}", solve_p2());
+fn main() -> io::Result<()> {
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+
+    let input: Vec<usize> = input
+        .trim()
+        .split(',')
+        .map(|x| x.parse::<usize>().unwrap())
+        .collect();
+
+    println!("p1: {}", solve_p1(input.clone()));
+    println!("p2: {}", solve_p2(input.clone()));
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_run_until_halt() {
+        let mut v = vec![1, 0, 0, 0, 99];
+        run_until_halt(&mut v);
+        assert_eq!(v, [2, 0, 0, 0, 99]);
+
+        v = vec![2, 3, 0, 3, 99];
+        run_until_halt(&mut v);
+        assert_eq!(v, [2, 3, 0, 6, 99]);
+
+        v = vec![2, 4, 4, 5, 99, 0];
+        run_until_halt(&mut v);
+        assert_eq!(v, [2, 4, 4, 5, 99, 9801]);
+
+        v = vec![1, 1, 1, 4, 99, 5, 6, 0, 99];
+        run_until_halt(&mut v);
+        assert_eq!(v, [30, 1, 1, 4, 2, 5, 6, 0, 99]);
+    }
 }

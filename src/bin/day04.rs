@@ -79,23 +79,23 @@ mod tests {
 
     #[test]
     fn test_digits_inc_or_same() {
-        assert_eq!(digits_inc_or_same(111111), true);
-        assert_eq!(digits_inc_or_same(223450), false);
+        assert_eq!(digits_inc_or_same(111_111), true);
+        assert_eq!(digits_inc_or_same(223_450), false);
     }
 
     #[test]
     fn test_two_adjacent_digits_same() {
-        assert_eq!(adjacent_digits_same(122345), true);
-        assert_eq!(adjacent_digits_same(111111), true);
+        assert_eq!(adjacent_digits_same(122_345), true);
+        assert_eq!(adjacent_digits_same(111_111), true);
     }
 
     #[test]
     fn test_adjacent_digits_same_advanced() {
-        assert_eq!(adjacent_digits_same_advanced(122345), true);
-        assert_eq!(adjacent_digits_same_advanced(111122), true);
-        assert_eq!(adjacent_digits_same_advanced(123444), false);
-        assert_eq!(adjacent_digits_same_advanced(112233), true);
-        assert_eq!(adjacent_digits_same_advanced(111111), false);
-        assert_eq!(adjacent_digits_same_advanced(112222), true);
+        assert_eq!(adjacent_digits_same_advanced(122_345), true);
+        assert_eq!(adjacent_digits_same_advanced(111_122), true);
+        assert_eq!(adjacent_digits_same_advanced(123_444), false);
+        assert_eq!(adjacent_digits_same_advanced(112_233), true);
+        assert_eq!(adjacent_digits_same_advanced(111_111), false);
+        assert_eq!(adjacent_digits_same_advanced(112_222), true);
     }
 }

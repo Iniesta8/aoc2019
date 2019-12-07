@@ -153,66 +153,70 @@ impl IntCodeCpu {
     }
 }
 
-#[test]
-fn test_step_add_mul() {
-    let mut cpu = IntCodeCpu::from_code("1,4,5,6,10,20,0");
-    cpu.step();
-    assert_eq!(cpu.ip, 4);
-    assert_eq!(cpu.memory, vec![1, 4, 5, 6, 10, 20, 30]);
-    assert!(cpu.running);
-    cpu.ip = 0;
-    cpu.memory[0] = 2;
-    cpu.step();
-    assert_eq!(cpu.ip, 4);
-    assert_eq!(cpu.memory, vec![2, 4, 5, 6, 10, 20, 200]);
-    assert!(cpu.running);
-}
-
-#[test]
-fn test_run() {
-    let mut cpu = IntCodeCpu::from_code("1,9,10,3,2,3,11,0,99,30,40,50");
-    cpu.run();
-    assert!(!cpu.running);
-    assert_eq!(
-        cpu.memory,
-        vec![3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]
-    )
-}
-
-#[test]
-fn test_io() {
-    let mut cpu = IntCodeCpu::from_code("3,0,4,0,99");
-    cpu.input = Some(1234);
-    cpu.run();
-    assert_eq!(cpu.output, Some(1234));
-}
-
-#[test]
-fn test_parameter_modes() {
-    let mut cpu = IntCodeCpu::from_code("1002,4,3,4,33");
-    cpu.run();
-    assert_eq!(cpu.memory[4], 99);
-    cpu = IntCodeCpu::from_code("1101,100,-1,4,0");
-    cpu.run();
-    assert_eq!(cpu.memory[4], 99);
-}
-
-#[test]
-fn test_conditions() {
-    fn helper(code: &str, true_example: i32, false_example: i32) {
-        let mut cpu = IntCodeCpu::from_code(code);
-        cpu.input = Some(true_example);
-        cpu.run();
-        assert_eq!(cpu.output, Some(1));
-
-        let mut cpu = IntCodeCpu::from_code(code);
-        cpu.input = Some(false_example);
-        cpu.run();
-        assert_eq!(cpu.output, Some(0));
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_step_add_mul() {
+        let mut cpu = IntCodeCpu::from_code("1,4,5,6,10,20,0");
+        cpu.step();
+        assert_eq!(cpu.ip, 4);
+        assert_eq!(cpu.memory, vec![1, 4, 5, 6, 10, 20, 30]);
+        assert!(cpu.running);
+        cpu.ip = 0;
+        cpu.memory[0] = 2;
+        cpu.step();
+        assert_eq!(cpu.ip, 4);
+        assert_eq!(cpu.memory, vec![2, 4, 5, 6, 10, 20, 200]);
+        assert!(cpu.running);
     }
 
-    helper("3,9,8,9,10,9,4,9,99,-1,8", 8, 7);
-    helper("3,3,1108,-1,8,3,4,3,99", 8, 7);
-    helper("3,9,7,9,10,9,4,9,99,-1,8", 7, 8);
-    helper("3,3,1107,-1,8,3,4,3,99", 7, 8);
+    #[test]
+    fn test_run() {
+        let mut cpu = IntCodeCpu::from_code("1,9,10,3,2,3,11,0,99,30,40,50");
+        cpu.run();
+        assert!(!cpu.running);
+        assert_eq!(
+            cpu.memory,
+            vec![3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]
+        )
+    }
+
+    #[test]
+    fn test_io() {
+        let mut cpu = IntCodeCpu::from_code("3,0,4,0,99");
+        cpu.input = Some(1234);
+        cpu.run();
+        assert_eq!(cpu.output, Some(1234));
+    }
+
+    #[test]
+    fn test_parameter_modes() {
+        let mut cpu = IntCodeCpu::from_code("1002,4,3,4,33");
+        cpu.run();
+        assert_eq!(cpu.memory[4], 99);
+        cpu = IntCodeCpu::from_code("1101,100,-1,4,0");
+        cpu.run();
+        assert_eq!(cpu.memory[4], 99);
+    }
+
+    #[test]
+    fn test_conditions() {
+        fn helper(code: &str, true_example: i32, false_example: i32) {
+            let mut cpu = IntCodeCpu::from_code(code);
+            cpu.input = Some(true_example);
+            cpu.run();
+            assert_eq!(cpu.output, Some(1));
+
+            let mut cpu = IntCodeCpu::from_code(code);
+            cpu.input = Some(false_example);
+            cpu.run();
+            assert_eq!(cpu.output, Some(0));
+        }
+
+        helper("3,9,8,9,10,9,4,9,99,-1,8", 8, 7);
+        helper("3,3,1108,-1,8,3,4,3,99", 8, 7);
+        helper("3,9,7,9,10,9,4,9,99,-1,8", 7, 8);
+        helper("3,3,1107,-1,8,3,4,3,99", 7, 8);
+    }
 }

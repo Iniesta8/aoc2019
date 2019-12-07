@@ -1,4 +1,4 @@
-use day05::intcode::IntCodeCpu;
+use aoc2019::intcode::IntCodeCpu;
 use std::io;
 
 fn main() -> io::Result<()> {

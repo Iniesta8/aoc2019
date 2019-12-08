@@ -11,7 +11,7 @@ fn get_layers(data: &[u8], lsize: usize) -> Vec<Vec<u8>> {
 fn verify_data(data: &[u8], lsize: usize) -> u32 {
     let layers = get_layers(&data, lsize);
 
-    let (_zeros, ones, twos) = layers
+    let (_, ones, twos) = layers
         .iter()
         .map(|e| {
             let mut digits_count: (u32, u32, u32) = (0, 0, 0);
@@ -25,7 +25,7 @@ fn verify_data(data: &[u8], lsize: usize) -> u32 {
             }
             digits_count
         })
-        .min()
+        .min_by_key(|(zeros, _, _)| *zeros)
         .unwrap();
 
     ones * twos

@@ -1,8 +1,10 @@
+use std::collections::VecDeque;
+
 #[derive(Clone)]
 pub struct IntCodeCpu {
     ip: usize,
-    running: bool,
-    pub input: Option<i32>,
+    pub running: bool,
+    pub input: VecDeque<i32>,
     pub output: Option<i32>,
     memory: Vec<i32>,
 }
@@ -29,7 +31,7 @@ impl IntCodeCpu {
         IntCodeCpu {
             ip: 0,
             running: true,
-            input: None,
+            input: VecDeque::new(),
             output: None,
             memory: code
                 .split(',')
@@ -38,10 +40,23 @@ impl IntCodeCpu {
         }
     }
 
+    // Terminates on opcode halt
     pub fn run(&mut self) {
         while self.running {
             self.step();
         }
+    }
+
+    // Terminates on available output
+    pub fn run_until_output(&mut self) -> Option<i32> {
+        while self.running {
+            self.step();
+            if let Some(out) = self.output {
+                self.output = None;
+                return Some(out);
+            }
+        }
+        None
     }
 
     fn fetch_operand(&self, mode: ParameterMode, immediate: i32) -> i32 {
@@ -113,7 +128,7 @@ impl IntCodeCpu {
                 self.ip += 4;
             }
             Instruction::IN { dst } => {
-                self.memory[*dst as usize] = self.input.unwrap();
+                self.memory[*dst as usize] = self.input.pop_front().unwrap();
                 self.ip += 2;
             }
             Instruction::OUT { src } => {
@@ -185,7 +200,7 @@ mod tests {
     #[test]
     fn test_io() {
         let mut cpu = IntCodeCpu::from_code("3,0,4,0,99");
-        cpu.input = Some(1234);
+        cpu.input.push_back(1234);
         cpu.run();
         assert_eq!(cpu.output, Some(1234));
     }
@@ -204,12 +219,12 @@ mod tests {
     fn test_conditions() {
         fn helper(code: &str, true_example: i32, false_example: i32) {
             let mut cpu = IntCodeCpu::from_code(code);
-            cpu.input = Some(true_example);
+            cpu.input.push_back(true_example);
             cpu.run();
             assert_eq!(cpu.output, Some(1));
 
             let mut cpu = IntCodeCpu::from_code(code);
-            cpu.input = Some(false_example);
+            cpu.input.push_back(false_example);
             cpu.run();
             assert_eq!(cpu.output, Some(0));
         }

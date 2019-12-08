@@ -5,7 +5,7 @@ const HEIGHT: usize = 6;
 const LAYER_SIZE: usize = WIDTH * HEIGHT;
 
 fn verify_data(layers: &[Vec<u8>]) -> u32 {
-    let l = layers
+    let (_zeros, ones, twos) = layers
         .iter()
         .map(|e| {
             let mut digits_count: (u32, u32, u32) = (0, 0, 0);
@@ -22,7 +22,7 @@ fn verify_data(layers: &[Vec<u8>]) -> u32 {
         .min()
         .unwrap();
 
-    l.1 * l.2
+    ones * twos
 }
 
 fn main() {

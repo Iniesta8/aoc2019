@@ -81,7 +81,7 @@ mod tests {
     #[test]
     fn test_decode_ssif() {
         assert_eq!(
-            decode_ssif(&vec![0, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 2, 0, 0, 0, 0], 4),
+            decode_ssif(&[0, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 2, 0, 0, 0, 0], 4),
             &[0, 1, 1, 0]
         );
     }

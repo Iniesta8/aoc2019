@@ -286,6 +286,7 @@ mod tests {
         assert_eq!(cpu.output.len(), 16);
         assert_eq!(cpu.output.pop_front(), Some(109));
         assert_eq!(cpu.output.pop_front(), Some(1));
+        assert_eq!(cpu.output.pop_back(), Some(99));
     }
 
     #[test]
@@ -293,5 +294,12 @@ mod tests {
         let mut cpu = IntCodeCpu::from_code("1102,34915192,34915192,7,4,7,99,0");
         cpu.run();
         assert_eq!(cpu.output.pop_front(), Some(34_915_192 * 34_915_192));
+    }
+
+    #[test]
+    fn test_large_numbers2() {
+        let mut cpu = IntCodeCpu::from_code("104,1125899906842624,99");
+        cpu.run();
+        assert_eq!(cpu.output.pop_front(), Some(1_125_899_906_842_624));
     }
 }

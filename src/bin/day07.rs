@@ -12,7 +12,7 @@ fn run_amplifiers(cpu: &IntCodeCpu) -> i32 {
                 amplifier.input.push_back(phase_setting);
                 amplifier.input.push_back(output);
                 amplifier.run();
-                output = amplifier.output.unwrap();
+                output = amplifier.output.pop_front().unwrap();
             }
             output
         })

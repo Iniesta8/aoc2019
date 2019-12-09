@@ -3,9 +3,10 @@ use std::collections::VecDeque;
 #[derive(Clone)]
 pub struct IntCodeCpu {
     ip: usize,
+    rbp: usize,
     pub running: bool,
     pub input: VecDeque<i32>,
-    pub output: Option<i32>,
+    pub output: VecDeque<i32>,
     memory: Vec<i32>,
 }
 
@@ -18,21 +19,24 @@ enum Instruction {
     JZ { cond: i32, target: i32 },
     LT { src1: i32, src2: i32, dst: i32 },
     EQ { src1: i32, src2: i32, dst: i32 },
+    RBO { src: i32 },
     HLT,
 }
 
 enum ParameterMode {
     Position,
     Immediate,
+    Relative,
 }
 
 impl IntCodeCpu {
     pub fn from_code(code: &str) -> IntCodeCpu {
         IntCodeCpu {
             ip: 0,
+            rbp: 0,
             running: true,
             input: VecDeque::new(),
-            output: None,
+            output: VecDeque::new(),
             memory: code
                 .split(',')
                 .map(|x| x.trim().parse::<i32>().unwrap())
@@ -51,45 +55,74 @@ impl IntCodeCpu {
     pub fn run_until_output(&mut self) -> Option<i32> {
         while self.running {
             self.step();
-            if let Some(out) = self.output {
-                self.output = None;
+            if let Some(out) = self.output.pop_front() {
                 return Some(out);
             }
         }
         None
     }
 
-    fn fetch_operand(&self, mode: ParameterMode, immediate: i32) -> i32 {
+    fn fetch(&mut self, addr: usize) -> i32 {
+        if addr > self.memory.len() {
+            self.memory.resize(addr + 1, 0);
+        }
+        self.memory[addr]
+    }
+
+    fn store(&mut self, addr: usize, val: i32) {
+        if addr > self.memory.len() {
+            self.memory.resize(addr + 1, 0);
+        }
+        self.memory[addr] = val;
+    }
+
+    fn fetch_operand(&mut self, mode: ParameterMode, immediate: i32) -> i32 {
         match mode {
-            ParameterMode::Position => self.memory[immediate as usize],
+            ParameterMode::Position => self.fetch(immediate as usize),
             ParameterMode::Immediate => immediate,
+            ParameterMode::Relative => self.fetch((self.rbp as i32 + immediate) as usize),
         }
     }
 
-    fn fetch_and_decode(&self) -> Instruction {
+    fn fetch_dest_addr(&self, mode: ParameterMode, immediate: i32) -> i32 {
+        match mode {
+            ParameterMode::Position => immediate,
+            ParameterMode::Immediate => panic!("Invalid parameter mode for dest operand"),
+            ParameterMode::Relative => self.rbp as i32 + immediate,
+        }
+    }
+
+    fn fetch_and_decode(&mut self) -> Instruction {
         let inst = self.memory[self.ip];
         let opcode = inst % 100;
         let mode1 = match inst / 100 % 10 {
             1 => ParameterMode::Immediate,
+            2 => ParameterMode::Relative,
             _ => ParameterMode::Position,
         };
         let mode2 = match inst / 1_000 % 10 {
             1 => ParameterMode::Immediate,
+            2 => ParameterMode::Relative,
+            _ => ParameterMode::Position,
+        };
+        let mode3 = match inst / 10_000 % 10 {
+            1 => ParameterMode::Immediate,
+            2 => ParameterMode::Relative,
             _ => ParameterMode::Position,
         };
         match opcode {
             1 => Instruction::ADD {
                 src1: self.fetch_operand(mode1, self.memory[self.ip + 1]),
                 src2: self.fetch_operand(mode2, self.memory[self.ip + 2]),
-                dst: self.memory[self.ip + 3],
+                dst: self.fetch_dest_addr(mode3, self.memory[self.ip + 3]),
             },
             2 => Instruction::MUL {
                 src1: self.fetch_operand(mode1, self.memory[self.ip + 1]),
                 src2: self.fetch_operand(mode2, self.memory[self.ip + 2]),
-                dst: self.memory[self.ip + 3],
+                dst: self.fetch_dest_addr(mode3, self.memory[self.ip + 3]),
             },
             3 => Instruction::IN {
-                dst: self.memory[self.ip + 1],
+                dst: self.fetch_dest_addr(mode1, self.memory[self.ip + 1]),
             },
             4 => Instruction::OUT {
                 src: self.fetch_operand(mode1, self.memory[self.ip + 1]),
@@ -105,12 +138,15 @@ impl IntCodeCpu {
             7 => Instruction::LT {
                 src1: self.fetch_operand(mode1, self.memory[self.ip + 1]),
                 src2: self.fetch_operand(mode2, self.memory[self.ip + 2]),
-                dst: self.memory[self.ip + 3],
+                dst: self.fetch_dest_addr(mode3, self.memory[self.ip + 3]),
             },
             8 => Instruction::EQ {
                 src1: self.fetch_operand(mode1, self.memory[self.ip + 1]),
                 src2: self.fetch_operand(mode2, self.memory[self.ip + 2]),
-                dst: self.memory[self.ip + 3],
+                dst: self.fetch_dest_addr(mode3, self.memory[self.ip + 3]),
+            },
+            9 => Instruction::RBO {
+                src: self.fetch_operand(mode1, self.memory[self.ip + 1]),
             },
             99 => Instruction::HLT,
             _ => panic!("unknown opcode ({})", opcode),
@@ -120,19 +156,20 @@ impl IntCodeCpu {
     fn execute(&mut self, inst: &Instruction) {
         match inst {
             Instruction::ADD { src1, src2, dst } => {
-                self.memory[*dst as usize] = src1 + src2;
+                self.store(*dst as usize, src1 + src2);
                 self.ip += 4;
             }
             Instruction::MUL { src1, src2, dst } => {
-                self.memory[*dst as usize] = src1 * src2;
+                self.store(*dst as usize, src1 * src2);
                 self.ip += 4;
             }
             Instruction::IN { dst } => {
-                self.memory[*dst as usize] = self.input.pop_front().unwrap();
+                let src = self.input.pop_front().unwrap();
+                self.store(*dst as usize, src);
                 self.ip += 2;
             }
             Instruction::OUT { src } => {
-                self.output = Some(*src);
+                self.output.push_back(*src);
                 self.ip += 2;
             }
             Instruction::JNZ { cond, target } => {
@@ -150,12 +187,16 @@ impl IntCodeCpu {
                 }
             }
             Instruction::LT { src1, src2, dst } => {
-                self.memory[*dst as usize] = if *src1 < *src2 { 1 } else { 0 };
+                self.store(*dst as usize, if *src1 < *src2 { 1 } else { 0 });
                 self.ip += 4;
             }
             Instruction::EQ { src1, src2, dst } => {
-                self.memory[*dst as usize] = if *src1 == *src2 { 1 } else { 0 };
+                self.store(*dst as usize, if *src1 == *src2 { 1 } else { 0 });
                 self.ip += 4;
+            }
+            Instruction::RBO { src } => {
+                self.rbp = (self.rbp as i32 + *src) as usize;
+                self.ip += 2;
             }
             Instruction::HLT => {
                 self.running = false;
@@ -164,7 +205,8 @@ impl IntCodeCpu {
     }
 
     fn step(&mut self) {
-        self.execute(&self.fetch_and_decode());
+        let inst = self.fetch_and_decode();
+        self.execute(&inst);
     }
 }
 
@@ -202,7 +244,7 @@ mod tests {
         let mut cpu = IntCodeCpu::from_code("3,0,4,0,99");
         cpu.input.push_back(1234);
         cpu.run();
-        assert_eq!(cpu.output, Some(1234));
+        assert_eq!(cpu.output.pop_front(), Some(1234));
     }
 
     #[test]
@@ -221,12 +263,12 @@ mod tests {
             let mut cpu = IntCodeCpu::from_code(code);
             cpu.input.push_back(true_example);
             cpu.run();
-            assert_eq!(cpu.output, Some(1));
+            assert_eq!(cpu.output.pop_front(), Some(1));
 
             let mut cpu = IntCodeCpu::from_code(code);
             cpu.input.push_back(false_example);
             cpu.run();
-            assert_eq!(cpu.output, Some(0));
+            assert_eq!(cpu.output.pop_front(), Some(0));
         }
 
         helper("3,9,8,9,10,9,4,9,99,-1,8", 8, 7);

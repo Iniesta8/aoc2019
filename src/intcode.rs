@@ -5,21 +5,21 @@ pub struct IntCodeCpu {
     ip: usize,
     rbp: usize,
     pub running: bool,
-    pub input: VecDeque<i32>,
-    pub output: VecDeque<i32>,
-    memory: Vec<i32>,
+    pub input: VecDeque<i64>,
+    pub output: VecDeque<i64>,
+    memory: Vec<i64>,
 }
 
 enum Instruction {
-    ADD { src1: i32, src2: i32, dst: i32 },
-    MUL { src1: i32, src2: i32, dst: i32 },
-    IN { dst: i32 },
-    OUT { src: i32 },
-    JNZ { cond: i32, target: i32 },
-    JZ { cond: i32, target: i32 },
-    LT { src1: i32, src2: i32, dst: i32 },
-    EQ { src1: i32, src2: i32, dst: i32 },
-    RBO { src: i32 },
+    ADD { src1: i64, src2: i64, dst: i64 },
+    MUL { src1: i64, src2: i64, dst: i64 },
+    IN { dst: i64 },
+    OUT { src: i64 },
+    JNZ { cond: i64, target: i64 },
+    JZ { cond: i64, target: i64 },
+    LT { src1: i64, src2: i64, dst: i64 },
+    EQ { src1: i64, src2: i64, dst: i64 },
+    RBO { src: i64 },
     HLT,
 }
 
@@ -39,7 +39,7 @@ impl IntCodeCpu {
             output: VecDeque::new(),
             memory: code
                 .split(',')
-                .map(|x| x.trim().parse::<i32>().unwrap())
+                .map(|x| x.trim().parse::<i64>().unwrap())
                 .collect(),
         }
     }
@@ -52,7 +52,7 @@ impl IntCodeCpu {
     }
 
     // Terminates on available output
-    pub fn run_until_output(&mut self) -> Option<i32> {
+    pub fn run_until_output(&mut self) -> Option<i64> {
         while self.running {
             self.step();
             if let Some(out) = self.output.pop_front() {
@@ -62,33 +62,33 @@ impl IntCodeCpu {
         None
     }
 
-    fn fetch(&mut self, addr: usize) -> i32 {
-        if addr > self.memory.len() {
+    fn fetch(&mut self, addr: usize) -> i64 {
+        if addr >= self.memory.len() {
             self.memory.resize(addr + 1, 0);
         }
         self.memory[addr]
     }
 
-    fn store(&mut self, addr: usize, val: i32) {
-        if addr > self.memory.len() {
+    fn store(&mut self, addr: usize, val: i64) {
+        if addr >= self.memory.len() {
             self.memory.resize(addr + 1, 0);
         }
         self.memory[addr] = val;
     }
 
-    fn fetch_operand(&mut self, mode: ParameterMode, immediate: i32) -> i32 {
+    fn fetch_operand(&mut self, mode: ParameterMode, immediate: i64) -> i64 {
         match mode {
             ParameterMode::Position => self.fetch(immediate as usize),
             ParameterMode::Immediate => immediate,
-            ParameterMode::Relative => self.fetch((self.rbp as i32 + immediate) as usize),
+            ParameterMode::Relative => self.fetch((self.rbp as i64 + immediate) as usize),
         }
     }
 
-    fn fetch_dest_addr(&self, mode: ParameterMode, immediate: i32) -> i32 {
+    fn fetch_dest_addr(&self, mode: ParameterMode, immediate: i64) -> i64 {
         match mode {
             ParameterMode::Position => immediate,
             ParameterMode::Immediate => panic!("Invalid parameter mode for dest operand"),
-            ParameterMode::Relative => self.rbp as i32 + immediate,
+            ParameterMode::Relative => self.rbp as i64 + immediate,
         }
     }
 
@@ -195,7 +195,7 @@ impl IntCodeCpu {
                 self.ip += 4;
             }
             Instruction::RBO { src } => {
-                self.rbp = (self.rbp as i32 + *src) as usize;
+                self.rbp = (self.rbp as i64 + *src) as usize;
                 self.ip += 2;
             }
             Instruction::HLT => {
@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_conditions() {
-        fn helper(code: &str, true_example: i32, false_example: i32) {
+        fn helper(code: &str, true_example: i64, false_example: i64) {
             let mut cpu = IntCodeCpu::from_code(code);
             cpu.input.push_back(true_example);
             cpu.run();
@@ -275,5 +275,23 @@ mod tests {
         helper("3,3,1108,-1,8,3,4,3,99", 8, 7);
         helper("3,9,7,9,10,9,4,9,99,-1,8", 7, 8);
         helper("3,3,1107,-1,8,3,4,3,99", 7, 8);
+    }
+
+    #[test]
+    fn test_resizing() {
+        // quine from day 9
+        let mut cpu =
+            IntCodeCpu::from_code("109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99");
+        cpu.run();
+        assert_eq!(cpu.output.len(), 16);
+        assert_eq!(cpu.output.pop_front(), Some(109));
+        assert_eq!(cpu.output.pop_front(), Some(1));
+    }
+
+    #[test]
+    fn test_large_numbers() {
+        let mut cpu = IntCodeCpu::from_code("1102,34915192,34915192,7,4,7,99,0");
+        cpu.run();
+        assert_eq!(cpu.output.pop_front(), Some(34_915_192 * 34_915_192));
     }
 }

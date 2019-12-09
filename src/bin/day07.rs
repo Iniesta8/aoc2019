@@ -2,7 +2,7 @@ use aoc2019::intcode::IntCodeCpu;
 use itertools::Itertools;
 use std::fs;
 
-fn run_amplifiers(cpu: &IntCodeCpu) -> i32 {
+fn run_amplifiers(cpu: &IntCodeCpu) -> i64 {
     (0..5)
         .permutations(5)
         .map(|phase_settings| {
@@ -20,7 +20,7 @@ fn run_amplifiers(cpu: &IntCodeCpu) -> i32 {
         .unwrap()
 }
 
-fn run_amplifiers_with_feedback(cpu: &IntCodeCpu) -> i32 {
+fn run_amplifiers_with_feedback(cpu: &IntCodeCpu) -> i64 {
     (5..10)
         .permutations(5)
         .map(|phase_settings| {

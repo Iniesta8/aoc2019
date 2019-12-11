@@ -7,6 +7,7 @@ use std::io;
 enum Color {
     Black,
     White,
+    // Unknown,
 }
 
 impl From<i64> for Color {
@@ -59,7 +60,10 @@ impl Robot {
             visited_positions: HashMap::new(),
             brain,
         };
-        robot.visit((0, 0));
+        robot
+            .visited_positions
+            .entry(robot.position)
+            .or_insert(BASIC_PANEL_COLOR);
         robot
     }
 
@@ -86,16 +90,13 @@ impl Robot {
 
     fn move_forward(&mut self) {
         match self.direction {
-            Direction::Up => self.position.1 += 1,
+            // Up has to be decreased and down has to be increased,
+            // otherwise the result will be upside-down!
+            Direction::Up => self.position.1 -= 1,
             Direction::Right => self.position.0 += 1,
-            Direction::Down => self.position.1 -= 1,
+            Direction::Down => self.position.1 += 1,
             Direction::Left => self.position.0 -= 1,
         }
-        self.visit(self.position);
-    }
-
-    fn visit(&mut self, pos: (i32, i32)) {
-        self.visited_positions.entry(pos).or_insert(Color::White);
     }
 
     fn paint(&mut self, color: Color) {
@@ -123,22 +124,29 @@ fn show_panel(visited_positions: &HashMap<(i32, i32), Color>) {
         for c in l {
             print!("{}", c);
         }
-        println!("");
+        println!();
     }
 }
+
+const BASIC_PANEL_COLOR: Color = Color::White;
 
 fn main() -> io::Result<()> {
     let code = fs::read_to_string("./input/day11.txt")?;
 
     let mut robot = Robot::new(IntCodeCpu::from_code(&code));
     loop {
-        match robot.visited_positions.get(&robot.position).unwrap() {
+        match robot
+            .visited_positions
+            .get(&robot.position)
+            .unwrap_or(&BASIC_PANEL_COLOR)
+        {
             Color::Black => robot.brain.input.push_back(0),
             Color::White => robot.brain.input.push_back(1),
         }
         if let Some(new_color) = robot.brain.run_until_output() {
+            robot.paint(Color::from(new_color));
+
             if let Some(new_direction) = robot.brain.run_until_output() {
-                robot.paint(Color::from(new_color));
                 robot.turn(Turn::from(new_direction));
                 robot.move_forward();
             } else {

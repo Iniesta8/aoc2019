@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::fs;
 use std::io;
@@ -31,6 +32,10 @@ fn get_direction((to_x, to_y): (usize, usize), (from_x, from_y): (usize, usize))
     } else {
         (xs / gcd, ys / gcd)
     }
+}
+
+fn get_directions(asteroids: &[(usize, usize)], from: (usize, usize)) -> Vec<(i32, i32)> {
+    asteroids.iter().map(|&a| get_direction(a, from)).collect()
 }
 
 fn is_in_sight(
@@ -93,17 +98,6 @@ fn get_visible_counts_per_pos(asteroids: &[(usize, usize)]) -> HashMap<(usize, u
     vis_counts
 }
 
-fn get_visible_asteroids(
-    asteroids: &[(usize, usize)],
-    from: (usize, usize),
-) -> Vec<(usize, usize)> {
-    asteroids
-        .iter()
-        .copied()
-        .filter(|&asteroid| is_in_sight(&asteroids, from, asteroid))
-        .collect()
-}
-
 fn parse_raw_map(raw_map: &str) -> Vec<(usize, usize)> {
     let mut asteroids = vec![];
     for (i, line) in raw_map.lines().enumerate() {
@@ -119,6 +113,7 @@ fn parse_raw_map(raw_map: &str) -> Vec<(usize, usize)> {
 fn main() -> io::Result<()> {
     let raw_map = fs::read_to_string("./input/day10.txt")?;
     let asteroids = parse_raw_map(&raw_map);
+
     let best_asteroid: Asteroid = find_best_asteroid(&get_visible_counts_per_pos(&asteroids));
 
     println!(
@@ -126,9 +121,37 @@ fn main() -> io::Result<()> {
         best_asteroid.position, best_asteroid.in_sight_count
     );
 
-    let visible_asteroids = get_visible_asteroids(&asteroids, best_asteroid.position);
+    let laser_directions: Vec<(i32, i32)> = get_directions(&asteroids, best_asteroid.position)
+        .into_iter()
+        .filter(|e| *e != (0, 0))
+        .unique()
+        .sorted_by(|a, b| {
+            (f64::from(a.0).atan2(f64::from(a.1)))
+                .partial_cmp(&f64::from(b.0).atan2(f64::from(b.1)))
+                .unwrap()
+                .reverse()
+        })
+        .collect();
+    let mut asteroids_by_direction = asteroids
+        .into_iter()
+        .map(|e| (get_direction(e, best_asteroid.position), e))
+        .into_group_map();
 
-    dbg!(&visible_asteroids, &visible_asteroids.len());
+    let mut vapor_count = 0;
+    for dir in &laser_directions {
+        if let Some(asteroids) = asteroids_by_direction.get_mut(dir) {
+            if !asteroids.is_empty() {
+                let target = asteroids.remove(0);
+                vapor_count += 1;
+                if vapor_count == 200 {
+                    println!(
+                        "p2: 200th asteroid to be vaporized is at position ({}, {})",
+                        target.0, target.1
+                    );
+                }
+            }
+        }
+    }
 
     Ok(())
 }

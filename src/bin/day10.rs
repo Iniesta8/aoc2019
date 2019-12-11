@@ -22,6 +22,17 @@ fn gcd(mut a: i32, mut b: i32) -> i32 {
     a.abs()
 }
 
+fn get_direction((to_x, to_y): (usize, usize), (from_x, from_y): (usize, usize)) -> (i32, i32) {
+    let xs = to_x as i32 - from_x as i32;
+    let ys = to_y as i32 - from_y as i32;
+    let gcd = gcd(xs, ys);
+    if gcd == 0 {
+        (0, 0)
+    } else {
+        (xs / gcd, ys / gcd)
+    }
+}
+
 fn is_in_sight(
     asteroids: &[Vec<bool>],
     (from_x, from_y): (usize, usize),
@@ -30,7 +41,6 @@ fn is_in_sight(
     if !asteroids[from_y][from_x] || !asteroids[to_y][to_x] {
         return false;
     }
-
     if from_x == to_x && from_y == to_y {
         return false;
     }
@@ -38,12 +48,10 @@ fn is_in_sight(
     let (mut tp_x, mut tp_y) = (from_x, from_y);
 
     while (tp_x, tp_y) != (to_x, to_y) {
-        let xs = to_x as i32 - from_x as i32;
-        let ys = to_y as i32 - from_y as i32;
-        let gcd = gcd(xs, ys);
+        let (xdir, ydir) = get_direction((to_x, to_y), (from_x, from_y));
 
-        tp_x = (tp_x as i32 + (xs / gcd)) as usize;
-        tp_y = (tp_y as i32 + (ys / gcd)) as usize;
+        tp_x = (tp_x as i32 + xdir) as usize;
+        tp_y = (tp_y as i32 + ydir) as usize;
         if asteroids[tp_y][tp_x] && (tp_x, tp_y) != (to_x, to_y) {
             return false;
         }

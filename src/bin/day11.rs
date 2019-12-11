@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 enum Color {
-    Black = 0,
-    White = 1,
+    Black,
+    White,
 }
 
 impl From<i64> for Color {
@@ -95,11 +95,35 @@ impl Robot {
     }
 
     fn visit(&mut self, pos: (i32, i32)) {
-        self.visited_positions.entry(pos).or_insert(Color::Black);
+        self.visited_positions.entry(pos).or_insert(Color::White);
     }
 
     fn paint(&mut self, color: Color) {
         self.visited_positions.insert(self.position, color);
+    }
+}
+
+fn show_panel(visited_positions: &HashMap<(i32, i32), Color>) {
+    let xmin = visited_positions.keys().min_by_key(|xs| xs.0).unwrap().0;
+    let xmax = visited_positions.keys().max_by_key(|xs| xs.0).unwrap().0;
+    let ymin = visited_positions.keys().min_by_key(|ys| ys.1).unwrap().1;
+    let ymax = visited_positions.keys().max_by_key(|ys| ys.1).unwrap().1;
+
+    let mut panel =
+        vec![vec![' '; (xmax - xmin).abs() as usize + 1]; (ymax - ymin).abs() as usize + 1];
+
+    for pos in visited_positions.keys() {
+        if *visited_positions.get(&pos).unwrap() == Color::White {
+            let (xs, ys) = pos;
+            panel[(*ys + ymin.abs()) as usize][(*xs + xmin.abs()) as usize] = '█';
+        }
+    }
+
+    for l in panel {
+        for c in l {
+            print!("{}", c);
+        }
+        println!("");
     }
 }
 
@@ -126,6 +150,9 @@ fn main() -> io::Result<()> {
     }
 
     println!("p1: {}", robot.visited_positions.iter().count());
+
+    println!("p2: ");
+    show_panel(&robot.visited_positions);
 
     Ok(())
 }

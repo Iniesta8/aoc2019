@@ -125,7 +125,7 @@ fn show_panel(visited_positions: &HashMap<(i32, i32), Color>) {
 const BASIC_PANEL_COLOR: Color = Color::White;
 
 fn main() -> io::Result<()> {
-    let code = fs::read_to_string("./input/day11.txt")?;
+    let code = fs::read_to_string("./input/day11.in")?;
 
     let mut robot = Robot::new(IntCodeCpu::from_code(&code));
     loop {

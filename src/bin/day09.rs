@@ -3,7 +3,7 @@ use std::fs;
 use std::io;
 
 fn main() -> io::Result<()> {
-    let code = fs::read_to_string("./input/day09.txt")?;
+    let code = fs::read_to_string("./input/day09.in")?;
 
     let mut cpu = IntCodeCpu::from_code(&code);
     cpu.input.push_back(1);

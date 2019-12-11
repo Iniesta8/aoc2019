@@ -60,7 +60,7 @@ fn print_image(img_data: &[u8], width: usize) {
 }
 
 fn main() {
-    let input = fs::read_to_string("./input/day08.txt").unwrap();
+    let input = fs::read_to_string("./input/day08.in").unwrap();
 
     let digits: Vec<u8> = input
         .trim()

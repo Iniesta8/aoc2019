@@ -51,7 +51,7 @@ fn run_amplifiers_with_feedback(cpu: &IntCodeCpu) -> i64 {
 }
 
 fn main() {
-    let input = fs::read_to_string("./input/day07.txt").unwrap();
+    let input = fs::read_to_string("./input/day07.in").unwrap();
     let cpu = IntCodeCpu::from_code(&input);
 
     println!("p1: {}", run_amplifiers(&cpu));

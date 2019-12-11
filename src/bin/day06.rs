@@ -48,7 +48,7 @@ fn solve_p2(edges: &[(&str, &str)]) -> usize {
 }
 
 fn main() {
-    let input = fs::read_to_string("./input/day06.txt").unwrap();
+    let input = fs::read_to_string("./input/day06.in").unwrap();
     let edges: Vec<(&str, &str)> = input
         .split('\n')
         .filter(|ele| !ele.is_empty())

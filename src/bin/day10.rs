@@ -111,7 +111,7 @@ fn parse_raw_map(raw_map: &str) -> Vec<(usize, usize)> {
 }
 
 fn main() -> io::Result<()> {
-    let raw_map = fs::read_to_string("./input/day10.txt")?;
+    let raw_map = fs::read_to_string("./input/day10.in")?;
     let asteroids = parse_raw_map(&raw_map);
 
     let best_asteroid: Asteroid = find_best_asteroid(&get_visible_counts_per_pos(&asteroids));

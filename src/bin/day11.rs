@@ -7,7 +7,6 @@ use std::io;
 enum Color {
     Black,
     White,
-    // Unknown,
 }
 
 impl From<i64> for Color {

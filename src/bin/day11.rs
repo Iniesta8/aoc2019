@@ -48,14 +48,16 @@ struct Robot {
     position: (i32, i32),
     direction: Direction,
     visited_positions: HashMap<(i32, i32), Color>,
+    brain: IntCodeCpu,
 }
 
 impl Robot {
-    fn new() -> Self {
+    fn new(brain: IntCodeCpu) -> Self {
         let mut robot = Robot {
             position: (0, 0),
             direction: Direction::Up,
             visited_positions: HashMap::new(),
+            brain,
         };
         robot.visit((0, 0));
         robot
@@ -104,15 +106,14 @@ impl Robot {
 fn main() -> io::Result<()> {
     let code = fs::read_to_string("./input/day11.txt")?;
 
-    let mut robot = Robot::new();
-    let mut cpu = IntCodeCpu::from_code(&code);
+    let mut robot = Robot::new(IntCodeCpu::from_code(&code));
     loop {
         match robot.visited_positions.get(&robot.position).unwrap() {
-            Color::Black => cpu.input.push_back(0),
-            Color::White => cpu.input.push_back(1),
+            Color::Black => robot.brain.input.push_back(0),
+            Color::White => robot.brain.input.push_back(1),
         }
-        if let Some(new_color) = cpu.run_until_output() {
-            if let Some(new_direction) = cpu.run_until_output() {
+        if let Some(new_color) = robot.brain.run_until_output() {
+            if let Some(new_direction) = robot.brain.run_until_output() {
                 robot.paint(Color::from(new_color));
                 robot.turn(Turn::from(new_direction));
                 robot.move_forward();

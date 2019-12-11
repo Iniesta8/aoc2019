@@ -53,17 +53,12 @@ struct Robot {
 
 impl Robot {
     fn new(brain: IntCodeCpu) -> Self {
-        let mut robot = Robot {
+        Robot {
             position: (0, 0),
             direction: Direction::Up,
-            visited_positions: HashMap::new(),
+            visited_positions: [((0, 0), BASIC_PANEL_COLOR)].iter().cloned().collect(),
             brain,
-        };
-        robot
-            .visited_positions
-            .entry(robot.position)
-            .or_insert(BASIC_PANEL_COLOR);
-        robot
+        }
     }
 
     fn turn(&mut self, turn: Turn) {

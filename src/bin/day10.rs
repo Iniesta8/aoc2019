@@ -35,28 +35,15 @@ fn is_in_sight(
         return false;
     }
 
-    // dbg!("\nfrom: {:?}", (from_x, from_y));
-    // dbg!("to: {:?}", (to_x, to_y));
-    // dbg!("xdir: {}, ydir: {}", xdir, ydir);
-
     let (mut tp_x, mut tp_y) = (from_x, from_y);
 
-    // dbg!(tp_x, tp_y);
     while (tp_x, tp_y) != (to_x, to_y) {
-        // tp_x = (tp_x as i32 + 1 * xdir) as usize;
+        let xs = to_x as i32 - from_x as i32;
+        let ys = to_y as i32 - from_y as i32;
+        let gcd = gcd(xs, ys);
 
-        let x = to_x as i32 - from_x as i32;
-        let y = to_y as i32 - from_y as i32;
-        let gcd = gcd(x, y);
-        // dbg!(x, y, gcd);
-
-        tp_x = (tp_x as i32 + (x / gcd)) as usize;
-        // dbg!("tp_x: {}", tp_x);
-        // dbg!("(to_x, to_y): ({}, {})", to_x, to_y);
-        // dbg!("(from_x, from_y): ({}, {})", from_x, from_y);
-
-        tp_y = (tp_y as i32 + (y as i32 / gcd)) as usize;
-        // dbg!("(tp_x, tp_y): ({}, {})", tp_x, tp_y);
+        tp_x = (tp_x as i32 + (xs / gcd)) as usize;
+        tp_y = (tp_y as i32 + (ys / gcd)) as usize;
         if asteroids[tp_y][tp_x] && (tp_x, tp_y) != (to_x, to_y) {
             return false;
         }
@@ -73,17 +60,15 @@ fn find_best_asteroid(map: &HashMap<(usize, usize), usize>) -> Asteroid {
 
     for (k, v) in map.iter() {
         if *v > best.in_sight_count {
-            best = Asteroid {
-                position: *k,
-                in_sight_count: *v,
-            };
+            best.position = *k;
+            best.in_sight_count = *v;
         }
     }
 
     best
 }
 
-fn create_map(asteroids: &[Vec<bool>]) -> HashMap<(usize, usize), usize> {
+fn get_visible_counts_per_pos(asteroids: &[Vec<bool>]) -> HashMap<(usize, usize), usize> {
     let mut map: HashMap<(usize, usize), usize> = HashMap::new();
 
     let xmax = asteroids[0].len();
@@ -108,6 +93,26 @@ fn create_map(asteroids: &[Vec<bool>]) -> HashMap<(usize, usize), usize> {
     map
 }
 
+fn get_visible_asteroids(
+    asteroids: &[Vec<bool>],
+    (from_x, from_y): (usize, usize),
+) -> Vec<(usize, usize)> {
+    let xmax = asteroids[0].len();
+    let ymax = asteroids.len();
+
+    let mut visible_asteroids = vec![];
+
+    for i in 0..xmax {
+        for j in 0..ymax {
+            if is_in_sight(&asteroids, (from_x, from_y), (i, j)) {
+                visible_asteroids.push((i, j));
+            }
+        }
+    }
+
+    visible_asteroids
+}
+
 fn parse_raw_map(raw_map: &str) -> Vec<Vec<bool>> {
     let mut asteroids = vec![];
     for line in raw_map.lines() {
@@ -120,12 +125,16 @@ fn parse_raw_map(raw_map: &str) -> Vec<Vec<bool>> {
 fn main() -> io::Result<()> {
     let raw_map = fs::read_to_string("./input/day10.txt")?;
     let asteroids = parse_raw_map(&raw_map);
-    let best_asteroid: Asteroid = find_best_asteroid(&create_map(&asteroids));
+    let best_asteroid: Asteroid = find_best_asteroid(&get_visible_counts_per_pos(&asteroids));
 
     println!(
-        "p1: {:?}, {}",
+        "p1: best position is {:?}, there are {} asteroids in sight",
         best_asteroid.position, best_asteroid.in_sight_count
     );
+
+    let visible_asteroids = get_visible_asteroids(&asteroids, best_asteroid.position);
+
+    dbg!(&visible_asteroids, &visible_asteroids.len());
 
     Ok(())
 }

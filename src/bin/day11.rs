@@ -3,10 +3,20 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 enum Color {
     Black = 0,
     White = 1,
+}
+
+impl From<i64> for Color {
+    fn from(val: i64) -> Self {
+        match val {
+            0 => Color::Black,
+            1 => Color::White,
+            _ => panic!("unknown color {}", val),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -15,6 +25,22 @@ enum Direction {
     Right,
     Down,
     Left,
+}
+
+#[derive(Debug)]
+enum Turn {
+    Left,
+    Right,
+}
+
+impl From<i64> for Turn {
+    fn from(val: i64) -> Self {
+        match val {
+            0 => Turn::Left,
+            1 => Turn::Right,
+            _ => panic!("unknown turn direction {}", val),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -35,21 +61,24 @@ impl Robot {
         robot
     }
 
-    fn turn_right(&mut self) {
-        self.direction = match self.direction {
-            Direction::Up => Direction::Right,
-            Direction::Right => Direction::Down,
-            Direction::Down => Direction::Left,
-            Direction::Left => Direction::Up,
-        }
-    }
-
-    fn turn_left(&mut self) {
-        self.direction = match self.direction {
-            Direction::Up => Direction::Left,
-            Direction::Left => Direction::Down,
-            Direction::Down => Direction::Right,
-            Direction::Right => Direction::Up,
+    fn turn(&mut self, turn: Turn) {
+        match turn {
+            Turn::Left => {
+                self.direction = match self.direction {
+                    Direction::Up => Direction::Left,
+                    Direction::Left => Direction::Down,
+                    Direction::Down => Direction::Right,
+                    Direction::Right => Direction::Up,
+                }
+            }
+            Turn::Right => {
+                self.direction = match self.direction {
+                    Direction::Up => Direction::Right,
+                    Direction::Right => Direction::Down,
+                    Direction::Down => Direction::Left,
+                    Direction::Left => Direction::Up,
+                }
+            }
         }
     }
 
@@ -84,16 +113,8 @@ fn main() -> io::Result<()> {
         }
         if let Some(new_color) = cpu.run_until_output() {
             if let Some(new_direction) = cpu.run_until_output() {
-                match new_color {
-                    0 => robot.paint(Color::Black),
-                    1 => robot.paint(Color::White),
-                    _ => panic!("unknown new color"),
-                }
-                match new_direction {
-                    0 => robot.turn_left(),
-                    1 => robot.turn_right(),
-                    _ => panic!("unknown new direction"),
-                }
+                robot.paint(Color::from(new_color));
+                robot.turn(Turn::from(new_direction));
                 robot.move_forward();
             } else {
                 break;

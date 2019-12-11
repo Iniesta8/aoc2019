@@ -34,11 +34,11 @@ fn get_direction((to_x, to_y): (usize, usize), (from_x, from_y): (usize, usize))
 }
 
 fn is_in_sight(
-    asteroids: &[Vec<bool>],
-    (from_x, from_y): (usize, usize),
+    asteroids: &[(usize, usize)],
     (to_x, to_y): (usize, usize),
+    (from_x, from_y): (usize, usize),
 ) -> bool {
-    if !asteroids[from_y][from_x] || !asteroids[to_y][to_x] {
+    if !asteroids.contains(&(to_x, to_y)) {
         return false;
     }
     if from_x == to_x && from_y == to_y {
@@ -52,7 +52,7 @@ fn is_in_sight(
 
         tp_x = (tp_x as i32 + xdir) as usize;
         tp_y = (tp_y as i32 + ydir) as usize;
-        if asteroids[tp_y][tp_x] && (tp_x, tp_y) != (to_x, to_y) {
+        if asteroids.contains(&(tp_x, tp_y)) && (tp_x, tp_y) != (to_x, to_y) {
             return false;
         }
     }
@@ -76,56 +76,42 @@ fn find_best_asteroid(map: &HashMap<(usize, usize), usize>) -> Asteroid {
     best
 }
 
-fn get_visible_counts_per_pos(asteroids: &[Vec<bool>]) -> HashMap<(usize, usize), usize> {
-    let mut map: HashMap<(usize, usize), usize> = HashMap::new();
+fn get_visible_counts_per_pos(asteroids: &[(usize, usize)]) -> HashMap<(usize, usize), usize> {
+    let mut vis_counts: HashMap<(usize, usize), usize> = HashMap::new();
 
-    let xmax = asteroids[0].len();
-    let ymax = asteroids.len();
-
-    for i in 0..xmax {
-        for j in 0..ymax {
-            for k in 0..xmax {
-                for l in 0..ymax {
-                    if is_in_sight(&asteroids, (i, j), (k, l)) {
-                        if let Some(x) = map.get_mut(&(i, j)) {
-                            *x += 1;
-                        } else {
-                            map.insert((i, j), 1);
-                        }
-                    }
+    for from in asteroids {
+        for to in asteroids {
+            if is_in_sight(&asteroids, *to, *from) {
+                if let Some(x) = vis_counts.get_mut(from) {
+                    *x += 1;
+                } else {
+                    vis_counts.insert(*from, 1);
                 }
             }
         }
     }
-
-    map
+    vis_counts
 }
 
 fn get_visible_asteroids(
-    asteroids: &[Vec<bool>],
-    (from_x, from_y): (usize, usize),
+    asteroids: &[(usize, usize)],
+    from: (usize, usize),
 ) -> Vec<(usize, usize)> {
-    let xmax = asteroids[0].len();
-    let ymax = asteroids.len();
-
-    let mut visible_asteroids = vec![];
-
-    for i in 0..xmax {
-        for j in 0..ymax {
-            if is_in_sight(&asteroids, (from_x, from_y), (i, j)) {
-                visible_asteroids.push((i, j));
-            }
-        }
-    }
-
-    visible_asteroids
+    asteroids
+        .iter()
+        .copied()
+        .filter(|&asteroid| is_in_sight(&asteroids, from, asteroid))
+        .collect()
 }
 
-fn parse_raw_map(raw_map: &str) -> Vec<Vec<bool>> {
+fn parse_raw_map(raw_map: &str) -> Vec<(usize, usize)> {
     let mut asteroids = vec![];
-    for line in raw_map.lines() {
-        let v: Vec<bool> = line.trim().chars().map(|e| e == '#').collect();
-        asteroids.push(v);
+    for (i, line) in raw_map.lines().enumerate() {
+        for (j, col) in line.trim().chars().enumerate() {
+            if col == '#' {
+                asteroids.push((j, i));
+            }
+        }
     }
     asteroids
 }
@@ -161,9 +147,9 @@ mod tests {
         ...##",
         );
 
-        assert_eq!(is_in_sight(&asteroids, (1, 0), (4, 0)), true);
-        assert_eq!(is_in_sight(&asteroids, (1, 0), (2, 0)), false);
-        assert_eq!(is_in_sight(&asteroids, (1, 0), (1, 2)), true);
-        assert_eq!(is_in_sight(&asteroids, (3, 4), (1, 0)), false);
+        assert_eq!(is_in_sight(&asteroids, (4, 0), (1, 0)), true);
+        assert_eq!(is_in_sight(&asteroids, (2, 0), (1, 0)), false);
+        assert_eq!(is_in_sight(&asteroids, (1, 2), (1, 0)), true);
+        assert_eq!(is_in_sight(&asteroids, (1, 0), (3, 4)), false);
     }
 }

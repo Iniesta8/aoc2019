@@ -1,7 +1,7 @@
 use std::fs;
 use std::io;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 struct Moon {
     position: (i32, i32, i32),
     velocity: (i32, i32, i32),
@@ -54,6 +54,30 @@ impl Moon {
     }
 }
 
+fn get_matching_state_for_axes(curr_state: &[Moon], original_state: &[Moon]) -> [bool; 3] {
+    let mut ret = [true, true, true];
+    curr_state
+        .iter()
+        .zip(original_state.iter())
+        .for_each(|(curr, orig)| {
+            ret[0] = ret[0]
+                && (curr.position.0 == orig.position.0 && curr.velocity.0 == orig.velocity.0);
+            ret[1] = ret[1]
+                && (curr.position.1 == orig.position.1 && curr.velocity.1 == orig.velocity.1);
+            ret[2] = ret[2]
+                && (curr.position.2 == orig.position.2 && curr.velocity.2 == orig.velocity.2);
+        });
+    ret
+}
+
+fn lcm(a: usize, b: usize) -> usize {
+    let mut params = if a >= b { (a, b) } else { (b, a) };
+    while params.1 != 0 {
+        params = (params.1, params.0 % params.1);
+    }
+    (a * b) / params.0
+}
+
 fn parse_input(input: &str) -> Vec<Moon> {
     input
         .lines()
@@ -90,6 +114,7 @@ fn main() -> io::Result<()> {
 
     let mut moons: Vec<Moon> = parse_input(&input);
 
+    // part1
     for _ in 0..1_000 {
         time_step(&mut moons);
     }
@@ -98,6 +123,27 @@ fn main() -> io::Result<()> {
         "p1: {}",
         moons.iter().map(|m| m.total_energy()).sum::<i32>()
     );
+
+    // part2
+    moons = parse_input(&input);
+
+    let original_moons = moons.clone();
+    let mut cycle_lengths: [Option<usize>; 3] = [None, None, None];
+    let mut num_steps = 0;
+    while !cycle_lengths.iter().all(|l| l.is_some()) {
+        time_step(&mut moons);
+        num_steps += 1;
+        for (dim, is_match) in get_matching_state_for_axes(&moons, &original_moons)
+            .iter()
+            .enumerate()
+        {
+            if cycle_lengths[dim].is_none() && *is_match {
+                cycle_lengths[dim] = Some(num_steps);
+            }
+        }
+    }
+    let lcm_across_dimensions = cycle_lengths.iter().fold(1, |acc, l| lcm(acc, l.unwrap()));
+    println!("p2: {}", lcm_across_dimensions);
 
     Ok(())
 }

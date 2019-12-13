@@ -1,5 +1,6 @@
 use aoc2019::intcode::{Event, IntCodeCpu};
 use itertools::Itertools;
+use std::cmp::Ordering;
 use std::fs;
 use std::io;
 
@@ -60,25 +61,20 @@ fn play(cpu: &mut IntCodeCpu) -> i64 {
                     if x == -1 && y == 0 {
                         score = val;
                     } else {
-                        let id = val;
-                        if TileID::from(id) == TileID::Ball {
-                            ball.position = (x, y);
-                        } else if TileID::from(id) == TileID::HPaddle {
-                            paddle.position = (x, y);
+                        match TileID::from(val) {
+                            TileID::Ball => ball.position = (x, y),
+                            TileID::HPaddle => paddle.position = (x, y),
+                            _ => {}
                         }
                     }
                     outputs.clear();
                 }
             }
-            Event::InputRequired => {
-                if ball.position.0 > paddle.position.0 {
-                    cpu.input.push_back(1);
-                } else if ball.position.0 < paddle.position.0 {
-                    cpu.input.push_back(-1);
-                } else {
-                    cpu.input.push_back(0);
-                }
-            }
+            Event::InputRequired => match ball.position.0.cmp(&paddle.position.0) {
+                Ordering::Less => cpu.input.push_back(-1),
+                Ordering::Equal => cpu.input.push_back(0),
+                Ordering::Greater => cpu.input.push_back(1),
+            },
         }
     }
     score

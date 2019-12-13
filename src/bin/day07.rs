@@ -29,12 +29,13 @@ fn run_amplifiers_with_feedback(cpu: &IntCodeCpu) -> i64 {
                 .map(|phase_setting| {
                     let mut amplifier = cpu.clone();
                     amplifier.input.push_back(*phase_setting);
+                    amplifier.set_running();
                     amplifier
                 })
                 .collect();
 
             let mut output = 0;
-            while amplifiers.first().unwrap().running {
+            while amplifiers.first().unwrap().running() {
                 for amplifier in &mut amplifiers {
                     amplifier.input.push_back(output);
                     if let Some(out) = amplifier.run_until_output() {

@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 pub struct IntCodeCpu {
     ip: usize,
     rbp: usize,
-    pub running: bool,
+    running: bool,
     pub input: VecDeque<i64>,
     pub output: VecDeque<i64>,
     memory: Vec<i64>,
@@ -41,7 +41,7 @@ impl IntCodeCpu {
         IntCodeCpu {
             ip: 0,
             rbp: 0,
-            running: true,
+            running: false,
             input: VecDeque::new(),
             output: VecDeque::new(),
             memory: code
@@ -49,6 +49,19 @@ impl IntCodeCpu {
                 .map(|x| x.trim().parse::<i64>().unwrap())
                 .collect(),
         }
+    }
+
+    //
+    pub fn set_running(&mut self) {
+        self.running = true;
+    }
+
+    pub fn halt(&mut self) {
+        self.running = false;
+    }
+
+    pub fn running(&self) -> bool {
+        self.running
     }
 
     pub fn peek_memory(&mut self, addr: usize) -> i64 {
@@ -61,6 +74,7 @@ impl IntCodeCpu {
 
     // Halts on opcode halt
     pub fn run(&mut self) {
+        self.set_running();
         while self.running {
             self.step();
         }
@@ -68,6 +82,7 @@ impl IntCodeCpu {
 
     // Halts on available output
     pub fn run_until_output(&mut self) -> Option<i64> {
+        self.set_running();
         while self.running {
             self.step();
             if let Some(out) = self.output.pop_front() {
@@ -79,6 +94,7 @@ impl IntCodeCpu {
 
     // Halts on pending event
     pub fn run_until_event(&mut self) -> Event {
+        self.set_running();
         while self.running {
             let curr_ip = self.ip;
             let inst = self.fetch_and_decode();
@@ -233,7 +249,7 @@ impl IntCodeCpu {
                 self.ip += 2;
             }
             Instruction::HLT => {
-                self.running = false;
+                self.halt();
             }
         }
         None
@@ -254,13 +270,11 @@ mod tests {
         cpu.step();
         assert_eq!(cpu.ip, 4);
         assert_eq!(cpu.memory, vec![1, 4, 5, 6, 10, 20, 30]);
-        assert!(cpu.running);
         cpu.ip = 0;
         cpu.memory[0] = 2;
         cpu.step();
         assert_eq!(cpu.ip, 4);
         assert_eq!(cpu.memory, vec![2, 4, 5, 6, 10, 20, 200]);
-        assert!(cpu.running);
     }
 
     #[test]

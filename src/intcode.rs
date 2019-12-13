@@ -7,7 +7,7 @@ pub struct IntCodeCpu {
     pub running: bool,
     pub input: VecDeque<i64>,
     pub output: VecDeque<i64>,
-    pub memory: Vec<i64>,
+    memory: Vec<i64>,
 }
 
 enum Instruction {
@@ -49,6 +49,10 @@ impl IntCodeCpu {
                 .map(|x| x.trim().parse::<i64>().unwrap())
                 .collect(),
         }
+    }
+
+    pub fn peek_memory(&mut self, addr: usize) -> i64 {
+        self.fetch(addr)
     }
 
     pub fn poke_memory(&mut self, addr: usize, val: i64) {

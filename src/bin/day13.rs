@@ -1,4 +1,5 @@
-use aoc2019::intcode::IntCodeCpu;
+use aoc2019::intcode::{Event, IntCodeCpu};
+use itertools::Itertools;
 use std::fs;
 use std::io;
 
@@ -7,7 +8,7 @@ enum TileID {
     Empty,
     Wall,
     Block,
-    HorizontalPaddle,
+    HPaddle,
     Ball,
 }
 
@@ -17,7 +18,7 @@ impl From<i64> for TileID {
             0 => TileID::Empty,
             1 => TileID::Wall,
             2 => TileID::Block,
-            3 => TileID::HorizontalPaddle,
+            3 => TileID::HPaddle,
             4 => TileID::Ball,
             _ => panic!("unknown tile id {}", val),
         }
@@ -30,50 +31,75 @@ struct Tile {
     id: TileID,
 }
 
-impl Tile {
-    fn new() -> Self {
-        Tile {
-            position: (0, 0),
-            id: TileID::Empty,
-        }
-    }
-}
+fn play(cpu: &mut IntCodeCpu) -> i64 {
+    let mut score = 0;
 
-fn get_tiles(cpu: &mut IntCodeCpu) -> Vec<Tile> {
-    let mut tiles: Vec<Tile> = vec![];
+    cpu.poke_memory(0, 2);
+
+    let mut ball = Tile {
+        position: (0, 0),
+        id: TileID::Ball,
+    };
+
+    let mut paddle = Tile {
+        position: (0, 0),
+        id: TileID::HPaddle,
+    };
+
+    let mut outputs = vec![];
     loop {
-        let mut tile = Tile::new();
-        if let Some(x) = cpu.run_until_output() {
-            tile.position.0 = x;
-            if let Some(y) = cpu.run_until_output() {
-                tile.position.1 = y;
-                if let Some(id) = cpu.run_until_output() {
-                    tile.id = TileID::from(id);
-                    tiles.push(tile);
-                } else {
-                    break;
+        let event = cpu.run_until_event();
+        match event {
+            Event::Halted => break,
+            Event::OutputAvailable(val) => {
+                outputs.push(val);
+                if outputs.len() == 3 {
+                    let x = outputs[0];
+                    let y = outputs[1];
+                    let val = outputs[2];
+                    if x == -1 && y == 0 {
+                        score = val;
+                    } else {
+                        let id = val;
+                        if TileID::from(id) == TileID::Ball {
+                            ball.position = (x, y);
+                        } else if TileID::from(id) == TileID::HPaddle {
+                            paddle.position = (x, y);
+                        }
+                    }
+                    outputs.clear();
                 }
-            } else {
-                break;
             }
-        } else {
-            break;
+            Event::InputRequired => {
+                if ball.position.0 > paddle.position.0 {
+                    cpu.input.push_back(1);
+                } else if ball.position.0 < paddle.position.0 {
+                    cpu.input.push_back(-1);
+                } else {
+                    cpu.input.push_back(0);
+                }
+            }
         }
     }
-    tiles
+    score
 }
 
 fn main() -> io::Result<()> {
     let code = fs::read_to_string("./input/day13.in")?;
-
     let mut cpu = IntCodeCpu::from_code(&code);
 
-    let tiles = get_tiles(&mut cpu);
+    cpu.run();
+    let num_blocks = cpu
+        .output
+        .iter()
+        .tuples()
+        .filter(|(_, _, id)| TileID::from(**id) == TileID::Block)
+        .count();
 
-    println!(
-        "p1: {}",
-        tiles.iter().filter(|t| t.id == TileID::Block).count()
-    );
+    println!("p1: {}", num_blocks);
 
+    cpu = IntCodeCpu::from_code(&code);
+    let score = play(&mut cpu);
+    println!("p2: {}", score);
     Ok(())
 }

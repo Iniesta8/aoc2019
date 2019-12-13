@@ -7,7 +7,7 @@ pub struct IntCodeCpu {
     pub running: bool,
     pub input: VecDeque<i64>,
     pub output: VecDeque<i64>,
-    memory: Vec<i64>,
+    pub memory: Vec<i64>,
 }
 
 enum Instruction {
@@ -29,6 +29,13 @@ enum ParameterMode {
     Relative,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum Event {
+    InputRequired,
+    OutputAvailable(i64),
+    Halted,
+}
+
 impl IntCodeCpu {
     pub fn from_code(code: &str) -> IntCodeCpu {
         IntCodeCpu {
@@ -44,14 +51,18 @@ impl IntCodeCpu {
         }
     }
 
-    // Terminates on opcode halt
+    pub fn poke_memory(&mut self, addr: usize, val: i64) {
+        self.store(addr, val);
+    }
+
+    // Halts on opcode halt
     pub fn run(&mut self) {
         while self.running {
             self.step();
         }
     }
 
-    // Terminates on available output
+    // Halts on available output
     pub fn run_until_output(&mut self) -> Option<i64> {
         while self.running {
             self.step();
@@ -60,6 +71,21 @@ impl IntCodeCpu {
             }
         }
         None
+    }
+
+    // Halts on pending event
+    pub fn run_until_event(&mut self) -> Event {
+        while self.running {
+            let curr_ip = self.ip;
+            let inst = self.fetch_and_decode();
+            if let Some(event) = self.execute(&inst, true) {
+                if event == Event::InputRequired {
+                    self.ip = curr_ip;
+                }
+                return event;
+            }
+        }
+        Event::Halted
     }
 
     fn fetch(&mut self, addr: usize) -> i64 {
@@ -153,7 +179,7 @@ impl IntCodeCpu {
         }
     }
 
-    fn execute(&mut self, inst: &Instruction) {
+    fn execute(&mut self, inst: &Instruction, wait_for_input: bool) -> Option<Event> {
         match inst {
             Instruction::ADD { src1, src2, dst } => {
                 self.store(*dst as usize, src1 + src2);
@@ -164,6 +190,9 @@ impl IntCodeCpu {
                 self.ip += 4;
             }
             Instruction::IN { dst } => {
+                if wait_for_input && self.input.is_empty() {
+                    return Some(Event::InputRequired);
+                }
                 let src = self.input.pop_front().unwrap();
                 self.store(*dst as usize, src);
                 self.ip += 2;
@@ -171,6 +200,7 @@ impl IntCodeCpu {
             Instruction::OUT { src } => {
                 self.output.push_back(*src);
                 self.ip += 2;
+                return Some(Event::OutputAvailable(*src));
             }
             Instruction::JNZ { cond, target } => {
                 if *cond != 0 {
@@ -202,11 +232,12 @@ impl IntCodeCpu {
                 self.running = false;
             }
         }
+        None
     }
 
     fn step(&mut self) {
         let inst = self.fetch_and_decode();
-        self.execute(&inst);
+        self.execute(&inst, false);
     }
 }
 

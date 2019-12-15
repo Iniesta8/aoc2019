@@ -48,7 +48,7 @@ struct Position {
     y: i64,
 }
 
-fn find_oxygen_system(cpu: IntCodeCpu) -> i64 {
+fn find_oxygen_system(cpu: IntCodeCpu) -> Position {
     let mut positions = vec![Position {
         steps: 0,
         cpu: cpu,
@@ -88,16 +88,74 @@ fn find_oxygen_system(cpu: IntCodeCpu) -> i64 {
                     x: new_x,
                     y: new_y,
                 }),
-                Status::Reached => return pos.steps + 1,
+                Status::Reached => {
+                    return Position {
+                        cpu: new_cpu,
+                        steps: pos.steps + 1,
+                        x: new_x,
+                        y: new_y,
+                    }
+                }
             }
         }
     }
+}
+
+fn fill_with_oxygen(cpu: IntCodeCpu) -> i64 {
+    let mut positions = vec![Position {
+        steps: 0,
+        cpu: cpu,
+        x: 0,
+        y: 0,
+    }];
+
+    let mut visited = HashSet::new();
+    let mut steps = 0;
+
+    while !positions.is_empty() {
+        let pos = positions.remove(0);
+        steps = pos.steps;
+
+        for direction in 1..5 {
+            let mut new_x = pos.x;
+            let mut new_y = pos.y;
+            match Direction::from(direction) {
+                Direction::North => new_y -= 1,
+                Direction::South => new_y += 1,
+                Direction::West => new_x -= 1,
+                Direction::East => new_x += 1,
+            }
+
+            if !visited.insert((new_x, new_y)) {
+                continue;
+            }
+
+            let mut new_cpu = pos.cpu.clone();
+            new_cpu.input.push_back(direction);
+            let output = new_cpu.run_until_output().unwrap();
+            match Status::from(output) {
+                Status::HitWall => {
+                    // hit the wall
+                }
+                Status::Moved | Status::Reached => positions.push(Position {
+                    cpu: new_cpu,
+                    steps: pos.steps + 1,
+                    x: new_x,
+                    y: new_y,
+                }),
+            }
+        }
+    }
+    steps
 }
 
 fn main() -> io::Result<()> {
     let code = fs::read_to_string("./input/day15.in")?;
     let cpu = IntCodeCpu::from_code(&code);
 
-    println!("p1: {}", find_oxygen_system(cpu));
+    let position = find_oxygen_system(cpu);
+
+    println!("p1: {}", position.steps);
+    println!("p2: {}", fill_with_oxygen(position.cpu));
     Ok(())
 }

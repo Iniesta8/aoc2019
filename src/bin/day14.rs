@@ -1,10 +1,9 @@
 use regex::Regex;
-use std::cmp;
+use std::cmp::{max, Ordering};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
 
-// type Chemical = (String, usize);
 type Reaction = HashMap<String, (isize, Vec<(String, isize)>)>;
 type Stock = HashMap<String, isize>;
 
@@ -30,12 +29,12 @@ fn get_num_ores(
     needed_chem: &str,
     needed_qty: isize,
 ) -> isize {
-    let (nec_qty, chemicals) = reactions.get(&needed_chem.to_string()).unwrap();
+    let (prod_qty, chemicals) = reactions.get(&needed_chem.to_string()).unwrap();
 
     let availabe = stock.entry(needed_chem.to_string()).or_insert(0);
-    let needed = cmp::max(0, needed_qty - *availabe);
-    let times = needed / nec_qty + (needed % nec_qty != 0) as isize;
-    let excess = times * nec_qty - needed_qty;
+    let needed = max(0, needed_qty - *availabe);
+    let times = needed / prod_qty + (needed % prod_qty != 0) as isize;
+    let excess = times * prod_qty - needed_qty;
     *availabe += excess;
 
     let mut num_ores = 0;
@@ -46,8 +45,24 @@ fn get_num_ores(
             num_ores += get_num_ores(reactions, stock, &chem.0, chem.1 * times);
         }
     }
-
     num_ores
+}
+
+const TRILLION: isize = 1_000_000_000_000;
+
+fn get_max_fuel(reactions: &Reaction, stock: &mut Stock, avail_ores: isize) -> isize {
+    let mut lb = avail_ores / get_num_ores(reactions, stock, "FUEL", 1);
+    let mut ub = lb * 2;
+
+    while lb != ub {
+        let m = (lb + ub + 1) / 2;
+        match get_num_ores(&reactions, stock, "FUEL", m).cmp(&avail_ores) {
+            Ordering::Equal => return m,
+            Ordering::Greater => ub = (lb + ub) / 2,
+            Ordering::Less => lb = m,
+        }
+    }
+    ub
 }
 
 fn main() -> io::Result<()> {
@@ -59,6 +74,11 @@ fn main() -> io::Result<()> {
         get_num_ores(&reactions, &mut HashMap::new(), "FUEL", 1)
     );
 
+    println!(
+        "p2: {}",
+        get_max_fuel(&reactions, &mut HashMap::new(), TRILLION)
+    );
+
     Ok(())
 }
 
@@ -67,7 +87,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_is_in_sight() {
+    fn test_parse_reactions() {
         let reactions = parse_reactions(&String::from(
             "10 ORE => 10 A
         1 ORE => 1 B

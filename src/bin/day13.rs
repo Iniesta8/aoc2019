@@ -1,4 +1,5 @@
 use aoc2019::intcode::{Event, IntCodeCpu};
+use console::{style, Term};
 use itertools::Itertools;
 use std::cmp::Ordering;
 use std::fs;
@@ -32,7 +33,7 @@ struct Tile {
     id: TileID,
 }
 
-fn play(cpu: &mut IntCodeCpu) -> i64 {
+fn play(cpu: &mut IntCodeCpu) -> io::Result<i64> {
     let mut score = 0;
 
     cpu.poke_memory(0, 2);
@@ -47,6 +48,10 @@ fn play(cpu: &mut IntCodeCpu) -> i64 {
         id: TileID::HPaddle,
     };
 
+    let term = Term::stdout();
+    term.hide_cursor()?;
+    term.clear_screen()?;
+
     let mut outputs = vec![];
     loop {
         let event = cpu.run_until_event();
@@ -60,13 +65,26 @@ fn play(cpu: &mut IntCodeCpu) -> i64 {
                     let val = outputs[2];
                     if x == -1 && y == 0 {
                         score = val;
+                        term.move_cursor_to(0, 0)?;
+                        term.write_str(&format!("score: {}", score))?;
                     } else {
-                        match TileID::from(val) {
-                            TileID::Ball => ball.position = (x, y),
-                            TileID::HPaddle => paddle.position = (x, y),
-                            _ => {}
-                        }
+                        let c = match TileID::from(val) {
+                            TileID::Empty => style(' '),
+                            TileID::Wall => style(' ').on_white(),
+                            TileID::Block => style(' ').on_yellow(),
+                            TileID::HPaddle => {
+                                paddle.position = (x, y);
+                                style('▔').green()
+                            }
+                            TileID::Ball => {
+                                ball.position = (x, y);
+                                style('●').red()
+                            }
+                        };
+                        term.move_cursor_to(x as usize, y as usize)?;
+                        term.write_str(&format!("{}", c))?;
                     }
+                    std::thread::sleep(std::time::Duration::from_millis(1));
                     outputs.clear();
                 }
             }
@@ -77,13 +95,13 @@ fn play(cpu: &mut IntCodeCpu) -> i64 {
             },
         }
     }
-    score
+    term.clear_screen()?;
+    Ok(score)
 }
 
 fn main() -> io::Result<()> {
     let code = fs::read_to_string("./input/day13.in")?;
     let mut cpu = IntCodeCpu::from_code(&code);
-
     cpu.run();
     let num_blocks = cpu
         .output
@@ -92,10 +110,10 @@ fn main() -> io::Result<()> {
         .filter(|(_, _, id)| TileID::from(**id) == TileID::Block)
         .count();
 
-    println!("p1: {}", num_blocks);
-
     cpu = IntCodeCpu::from_code(&code);
-    let score = play(&mut cpu);
+    let score = play(&mut cpu)?;
+    println!("p1: {}", num_blocks);
     println!("p2: {}", score);
+
     Ok(())
 }

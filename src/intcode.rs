@@ -23,6 +23,7 @@ enum Instruction {
     HLT,
 }
 
+#[derive(Debug)]
 enum ParameterMode {
     Position,
     Immediate,
@@ -51,7 +52,7 @@ impl IntCodeCpu {
         }
     }
 
-    //
+    // Set cpu to running state manually
     pub fn set_running(&mut self) {
         self.running = true;
     }
@@ -133,7 +134,9 @@ impl IntCodeCpu {
     fn fetch_dest_addr(&self, mode: ParameterMode, immediate: i64) -> i64 {
         match mode {
             ParameterMode::Position => immediate,
-            ParameterMode::Immediate => panic!("Invalid parameter mode for dest operand"),
+            ParameterMode::Immediate => {
+                panic!("Invalid parameter mode for dest operand ({:?})", mode)
+            }
             ParameterMode::Relative => self.rbp as i64 + immediate,
         }
     }

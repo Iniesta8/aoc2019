@@ -21,7 +21,7 @@ impl From<i64> for TileID {
             2 => TileID::Block,
             3 => TileID::HPaddle,
             4 => TileID::Ball,
-            _ => panic!("unknown tile id {}", val),
+            _ => panic!("unknown tile id: {}", val),
         }
     }
 }

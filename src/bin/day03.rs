@@ -44,7 +44,7 @@ fn get_route(route: &mut HashMap<(i32, i32), u32>, route_raw: &[&str]) {
                 }
             }
             _ => {
-                panic!("unknown direction");
+                panic!("unknown direction: {}", &dir[..1]);
             }
         };
     }

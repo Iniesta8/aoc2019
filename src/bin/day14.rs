@@ -7,7 +7,6 @@ use std::io;
 type Reaction = HashMap<String, (isize, Vec<(String, isize)>)>;
 type Stock = HashMap<String, isize>;
 
-// Parses puzzle input and returns a vector of reactions
 fn parse_reactions(input: &str) -> Reaction {
     let re = Regex::new(r"(\d+) ([A-Z]+)").unwrap();
     input

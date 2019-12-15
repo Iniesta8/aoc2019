@@ -9,7 +9,7 @@ fn main() -> io::Result<()> {
         .map(|x| x.parse::<u32>().unwrap() / 3 - 2)
         .sum();
 
-    println!("part 1: {}", sum1);
+    println!("p1: {}", sum1);
 
     let mut sum2: i32 = 0;
     for val in input.lines() {
@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
         }
     }
 
-    println!("part 2: {}", sum2);
+    println!("p2: {}", sum2);
 
     Ok(())
 }

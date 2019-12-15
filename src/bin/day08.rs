@@ -20,7 +20,7 @@ fn verify_data(data: &[u8], lsize: usize) -> u32 {
                     0 => digits_count.0 += 1,
                     1 => digits_count.1 += 1,
                     2 => digits_count.2 += 1,
-                    _ => panic!("unknown color"),
+                    _ => panic!("unknown color code: {}", d),
                 }
             }
             digits_count

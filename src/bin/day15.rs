@@ -18,7 +18,7 @@ impl From<i64> for Direction {
             2 => Direction::South,
             3 => Direction::West,
             4 => Direction::East,
-            _ => panic!("unknown direction {}", val),
+            _ => panic!("unknown direction: {}", val),
         }
     }
 }
@@ -36,7 +36,7 @@ impl From<i64> for Status {
             0 => Status::HitWall,
             1 => Status::Moved,
             2 => Status::Reached,
-            _ => panic!("unknown status code {}", val),
+            _ => panic!("unknown status code: {}", val),
         }
     }
 }

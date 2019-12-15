@@ -13,7 +13,7 @@ impl Opcode {
             1 => Opcode::Add,
             2 => Opcode::Mul,
             99 => Opcode::Halt,
-            _ => panic!("Unknown opcode"),
+            _ => panic!("unknown opcode: {}", value),
         }
     }
 }

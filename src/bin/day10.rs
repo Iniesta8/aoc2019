@@ -61,7 +61,6 @@ fn is_in_sight(
             return false;
         }
     }
-
     true
 }
 
@@ -77,7 +76,6 @@ fn find_best_asteroid(map: &HashMap<(usize, usize), usize>) -> Asteroid {
             best.in_sight_count = *v;
         }
     }
-
     best
 }
 
@@ -152,7 +150,6 @@ fn main() -> io::Result<()> {
             }
         }
     }
-
     Ok(())
 }
 

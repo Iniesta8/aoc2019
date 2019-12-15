@@ -15,7 +15,6 @@ fn solve_p1(edges: &[(&str, &str)]) -> usize {
             orbited = orbit_map.get(orbited).unwrap();
         }
     }
-
     count
 }
 
@@ -43,7 +42,6 @@ fn solve_p2(edges: &[(&str, &str)]) -> usize {
             return hops + route.get(orbited).unwrap();
         }
     }
-
     panic!("no route found");
 }
 

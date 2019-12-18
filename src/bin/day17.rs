@@ -52,16 +52,44 @@ fn parse_scaffold_map(output: &VecDeque<i64>) -> Vec<Vec<i64>> {
     scaffold_map
 }
 
-fn part1(output: &VecDeque<i64>) -> usize {
-    get_intersections_count(&parse_scaffold_map(&output))
+fn part1(cpu: &mut IntCodeCpu) -> usize {
+    cpu.run();
+    print_scaffold_map(&cpu.output);
+    get_intersections_count(&parse_scaffold_map(&cpu.output))
+}
+
+fn input_ascii_code(cpu: &mut IntCodeCpu, ascii: &str) {
+    ascii.chars().for_each(|c| cpu.input.push_back(c as i64));
+}
+
+fn part2(cpu: &mut IntCodeCpu) -> i64 {
+    cpu.poke_memory(0, 2);
+
+    let _possible_path = "L,12,L,10,R,8,L,12,
+                          R,8,R,10,R,12,
+                          L,12,L,10,R,8,L,12,
+                          R,8,R,10,R,12,
+                          L,10,R,12,R,8,
+                          L,10,R,12,R,8,
+                          R,8,R,10,R,12,
+                          L,12,L,10,R,8,L,12,
+                          R,8,R,10,R,12,
+                          L,10,R,12,R,8";
+
+    input_ascii_code(cpu, "A,B,A,B,C,C,B,A,B,C\n");
+    input_ascii_code(cpu, "L,12,L,10,R,8,L,12\n");
+    input_ascii_code(cpu, "R,8,R,10,R,12\n");
+    input_ascii_code(cpu, "L,10,R,12,R,8\n");
+    input_ascii_code(cpu, "n\n");
+    cpu.run();
+    cpu.output.pop_back().unwrap()
 }
 
 fn main() -> io::Result<()> {
     let code = fs::read_to_string("./input/day17.in")?;
-    let mut cpu = IntCodeCpu::from_code(&code.trim());
+    let cpu = IntCodeCpu::from_code(&code.trim());
 
-    cpu.run();
-    // print_scaffold_map(&cpu.output);
-    println!("p1: {}", part1(&cpu.output));
+    println!("p1: {}", part1(&mut cpu.clone()));
+    println!("p2: {}", part2(&mut cpu.clone()));
     Ok(())
 }
